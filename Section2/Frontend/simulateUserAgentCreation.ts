@@ -19,31 +19,33 @@ const config: InitConfig = {
     },
   }
 
-const agent = new Agent({
-config,
-  dependencies: agentDependencies,
-  modules: {
-    dids: new DidsModule({
-        resolvers: [new IndyVdrIndyDidResolver()],
-      }),
-      indyVdr: new IndyVdrModule({
-        indyVdr,
-        networks: [
-          {
-            isProduction: false,
-            indyNamespace: 'von',
-            genesisTransactions: '<genesis_transactions>',
-            connectOnStartup: true,
+const createAgent = () => {
+    const agent = new Agent({
+        config,
+          dependencies: agentDependencies,
+          modules: {
+            dids: new DidsModule({
+                resolvers: [new IndyVdrIndyDidResolver()],
+              }),
+              indyVdr: new IndyVdrModule({
+                indyVdr,
+                networks: [
+                  {
+                    isProduction: false,
+                    indyNamespace: 'von',
+                    genesisTransactions: '<genesis_transactions>',
+                    connectOnStartup: true,
+                  },
+                ],
+              }),
+            // AnonCreds
+            anoncreds: new AnonCredsModule({
+              registries: [new IndyVdrAnonCredsRegistry()],
+            }),
+        
+            askar: new AskarModule({
+              ariesAskar,
+            }),
           },
-        ],
-      }),
-    // AnonCreds
-    anoncreds: new AnonCredsModule({
-      registries: [new IndyVdrAnonCredsRegistry()],
-    }),
-
-    askar: new AskarModule({
-      ariesAskar,
-    }),
-  },
-})
+        })
+}
