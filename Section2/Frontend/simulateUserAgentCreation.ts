@@ -3,13 +3,13 @@ import { agentDependencies } from '@aries-framework/node'
 import { AskarModule } from '@aries-framework/askar'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 
-import { IndyVdrAnonCredsRegistry,IndyVdrIndyDidResolver, IndyVdrModule } from '@aries-framework/indy-vdr'
+import { IndyVdrIndyDidResolver, IndyVdrIndyDidRegistrar, IndyVdrModule } from '@aries-framework/indy-vdr'
 import { indyVdr } from '@hyperledger/indy-vdr-nodejs'
-import { AnonCredsModule,  } from '@aries-framework/anoncreds'
 
 import dotenv from 'dotenv';
 
 dotenv.config();
+import axios from 'axios';
 
 const config: InitConfig = {
     label: 'docs-agent-nodejs',
@@ -19,12 +19,15 @@ const config: InitConfig = {
     },
   }
 
-const createAgent = () => {
+const createAgent = async () => {
+    const res = await axios.get(process.env.GENESIS_URL_LINK as string);
+    
     const agent = new Agent({
         config,
           dependencies: agentDependencies,
           modules: {
             dids: new DidsModule({
+                registrars: [new IndyVdrIndyDidRegistrar()],
                 resolvers: [new IndyVdrIndyDidResolver()],
               }),
               indyVdr: new IndyVdrModule({
@@ -33,19 +36,18 @@ const createAgent = () => {
                   {
                     isProduction: false,
                     indyNamespace: 'von',
-                    genesisTransactions: '<genesis_transactions>',
+                    genesisTransactions: res.data,
                     connectOnStartup: true,
                   },
                 ],
               }),
-            // AnonCreds
-            anoncreds: new AnonCredsModule({
-              registries: [new IndyVdrAnonCredsRegistry()],
-            }),
         
             askar: new AskarModule({
               ariesAskar,
             }),
           },
         })
+        console.log(agent);
+        
 }
+createAgent();

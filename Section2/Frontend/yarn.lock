@@ -14,7 +14,7 @@
     rxjs "^7.2.0"
     tsyringe "^4.7.0"
 
-"@aries-framework/anoncreds@0.4.0", "@aries-framework/anoncreds@^0.4.0":
+"@aries-framework/anoncreds@0.4.0":
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/@aries-framework/anoncreds/-/anoncreds-0.4.0.tgz#abf0dd6b316d607fbee9fc5ef5d5709dfa2ded36"
   integrity sha512-jzZVMXJoTutF5jrATYXHiavUi2APEUbvGiOA8EelP7cabVxCijoWh0DdTEBoGSUv9xuK26iSWVY0MmnAxD7l9g==
