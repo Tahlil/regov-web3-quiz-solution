@@ -6,6 +6,11 @@ import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 import { IndyVdrAnonCredsRegistry,IndyVdrIndyDidResolver, IndyVdrModule } from '@aries-framework/indy-vdr'
 import { indyVdr } from '@hyperledger/indy-vdr-nodejs'
 import { AnonCredsModule,  } from '@aries-framework/anoncreds'
+
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 const config: InitConfig = {
     label: 'docs-agent-nodejs',
     walletConfig: {
