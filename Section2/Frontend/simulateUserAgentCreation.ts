@@ -1,53 +1,127 @@
-import { Agent, DidsModule, KeyType, DidDocument, InitConfig } from '@aries-framework/core'
-import { agentDependencies } from '@aries-framework/node'
-import { AskarModule } from '@aries-framework/askar'
-import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
+import {
+  Agent,
+  DidsModule,
+  DidDocument,
+  InitConfig,
 
-import { IndyVdrIndyDidResolver, IndyVdrIndyDidRegistrar, IndyVdrModule } from '@aries-framework/indy-vdr'
-import { indyVdr } from '@hyperledger/indy-vdr-nodejs'
+} from "@aries-framework/core";
+import { agentDependencies } from "@aries-framework/node";
+import { AskarModule, AskarWallet } from "@aries-framework/askar";
+import {
+  ariesAskar,
+  Store,
+  Key,
+  KeyAlgs,
+  StoreKeyMethod,
+  KdfMethod,
+  
+} from "@hyperledger/aries-askar-nodejs";
 
-import dotenv from 'dotenv';
+import { mkdirSync, promises } from "fs";
 
+import {
+  IndyVdrIndyDidResolver,
+  IndyVdrIndyDidRegistrar,
+  IndyVdrModule,
+} from "@aries-framework/indy-vdr";
+import { indyVdr } from "@hyperledger/indy-vdr-nodejs";
+
+import dotenv from "dotenv";
+import path from 'path'
 dotenv.config();
-import axios from 'axios';
+import axios from "axios";
 
 const config: InitConfig = {
-    label: 'docs-agent-nodejs',
-    walletConfig: {
-      id: 'wallet-id',
-      key: 'testkey0000000000000000000000000',
-    },
-  }
+  label: "user-agent",
+  // walletConfig: {
+  //   id: 'wallet-id',
+  //   key: 'testkey0000000000000000000000000',
+  // },
+};
 
-const createAgent = async () => {
-    const res = await axios.get(process.env.GENESIS_URL_LINK as string);
+const newWallet = async () => {
+  const storagePath = process.env.DATABASE_PATH as string;
+  try {
+    await promises.access(storagePath);
+  } catch {
+    mkdirSync(storagePath, 0o0744);
+  }
+  
+  let store;
+  try {
+    await promises.access(path.join(storagePath, "regov.db"));
+    console.log("DB already created");
     
-    const agent = new Agent({
-        config,
-          dependencies: agentDependencies,
-          modules: {
-            dids: new DidsModule({
-                registrars: [new IndyVdrIndyDidRegistrar()],
-                resolvers: [new IndyVdrIndyDidResolver()],
-              }),
-              indyVdr: new IndyVdrModule({
-                indyVdr,
-                networks: [
-                  {
-                    isProduction: false,
-                    indyNamespace: 'von',
-                    genesisTransactions: res.data,
-                    connectOnStartup: true,
-                  },
-                ],
-              }),
-        
-            askar: new AskarModule({
-              ariesAskar,
-            }),
+    store = await Store.open({
+        uri: `sqlite://${storagePath}/regov.db`,
+        profile: 'regov',
+          passKey: "123321"
+    
+      })
+  } catch {
+    console.log("DB not created");
+    
+    store = await Store.provision({
+        uri: `sqlite://${storagePath}/regov.db`,
+        recreate: true,
+        profile: 'regov',
+        passKey: "123321"
+    });
+  }
+  console.log(store);
+  
+ 
+  const keyName = process.env.KEY_NAME + "";
+  const session = await store.openSession();
+  let key = await session.fetchKey({ name: keyName })
+  if(!key){
+      console.log("Key not saved");
+      const newKey = Key.generate(KeyAlgs.Bls12381G1)
+      await session.insertKey({
+          key: newKey,
+          name: keyName
+      })
+  }
+  key = await session.fetchKey({
+      name: keyName
+  })
+  console.log(key?.key.secretBytes);
+  await session.close();
+  
+};
+const createAgent = async () => {
+  const res = await axios.get(process.env.GENESIS_URL_LINK as string);
+
+  const agent = new Agent({
+    config,
+    dependencies: agentDependencies,
+    modules: {
+      dids: new DidsModule({
+        registrars: [new IndyVdrIndyDidRegistrar()],
+        resolvers: [new IndyVdrIndyDidResolver()],
+      }),
+      indyVdr: new IndyVdrModule({
+        indyVdr,
+        networks: [
+          {
+            isProduction: false,
+            indyNamespace: "von",
+            genesisTransactions: res.data,
+            connectOnStartup: true,
           },
-        })
-        console.log(agent);
-        
-}
-createAgent();
+        ],
+      }),
+
+      askar: new AskarModule({
+        ariesAskar,
+      }),
+    },
+  });
+  await agent.initialize();
+  console.log(agent);
+
+  return agent;
+};
+// createAgent()
+newWallet();
+// console.log(agentDependencies);

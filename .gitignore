@@ -294,3 +294,5 @@ config/.samples.used
 .idea/
 
 .DS_Store/
+
+sqlite/

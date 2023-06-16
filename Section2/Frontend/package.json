@@ -8,6 +8,7 @@
     "@hyperledger/aries-askar-nodejs": "^0.1.0",
     "@hyperledger/indy-vdr-nodejs": "^0.1.0",
     "axios": "^1.4.0",
-    "dotenv": "^16.3.0"
+    "dotenv": "^16.3.0",
+    "sqlite": "^4.2.1"
   }
 }
