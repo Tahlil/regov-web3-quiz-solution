@@ -33,11 +33,18 @@ import axios from "axios";
 
 const config: InitConfig = {
   label: "user-agent",
-  // walletConfig: {
-  //   id: 'wallet-id',
-  //   key: 'testkey0000000000000000000000000',
-  // },
+  walletConfig: {
+    id: 'wallet-id',
+    key: 'testkey0000000000000000000000000',
+  },
 };
+
+function uint8ArrayToFixedLengthText(uint8Array: Uint8Array, length: number): string {
+    const base64 = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)));
+    const alphanumericOnly = base64.replace(/[^A-Za-z0-9]/g, '');
+    const truncatedOrPadded = alphanumericOnly.slice(0, length).padEnd(length, '0');
+    return truncatedOrPadded;
+  }
 
 const newWallet = async () => {
   const storagePath = process.env.DATABASE_PATH as string;
@@ -68,12 +75,10 @@ const newWallet = async () => {
         passKey: "123321"
     });
   }
-  console.log(store);
-  
- 
+
   const keyName = process.env.KEY_NAME + "";
   const session = await store.openSession();
-  let key = await session.fetchKey({ name: keyName })
+  let key = (await session.fetchKey({ name: keyName }));
   if(!key){
       console.log("Key not saved");
       const newKey = Key.generate(KeyAlgs.Bls12381G1)
@@ -82,11 +87,16 @@ const newWallet = async () => {
           name: keyName
       })
   }
-  key = await session.fetchKey({
+  key = (await session.fetchKey({
       name: keyName
-  })
-  console.log(key?.key.secretBytes);
+  }));
+ 
+  const keyAsBytes =key?.key.secretBytes as Uint8Array
+
+  const keyString = uint8ArrayToFixedLengthText(keyAsBytes, 32);
+
   await session.close();
+  return keyString;
   
 };
 const createAgent = async () => {
